@@ -61,7 +61,7 @@
                         <TextBlock MinWidth="200"
                                    HorizontalAlignment="Right"
                                    Text="{Binding Sum,
-                                                  Converter={StaticResource FixUiConverter}}"
+                                                  Converter={StaticResource FixUiConverter}, ConverterParameter=C}"
                                    TextAlignment="Right" />
                     </StackPanel>
                 </HierarchicalDataTemplate>

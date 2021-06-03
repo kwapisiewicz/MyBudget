@@ -1,4 +1,5 @@
-﻿using Microsoft.Practices.Prism.Mvvm;
+﻿using Microsoft.Practices.ObjectBuilder2;
+using Microsoft.Practices.Prism.Mvvm;
 using MyBudget.Core.DataContext;
 using MyBudget.Model;
 using MyBudget.UI.Core.Controls;
@@ -8,9 +9,42 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace MyBudget.UI.Operations
 {
+    public class StatisticsGroupSorter : IComparer<StatisticsGroup>
+    {
+        private Dictionary<string, int> ItemsOrder = new Dictionary<string, int>
+        {
+            { "Dochody",1 },
+            { "Opłaty",2 },
+            { "Jedzenie",3 },
+            { "Samochód",4 },
+            { "Zakupy",5 }
+        };
+
+        public int Compare(StatisticsGroup x, StatisticsGroup y)
+        {
+            if (ItemsOrder.Keys.Contains(x.Key) && ItemsOrder.Keys.Contains(y.Key))
+            {
+                return ItemsOrder[x.Key] - ItemsOrder[y.Key];
+            }
+
+            if (ItemsOrder.Keys.Contains(x.Key) && !ItemsOrder.Keys.Contains(y.Key))
+            {
+                return -1;
+            }
+            
+            if (!ItemsOrder.Keys.Contains(x.Key) && ItemsOrder.Keys.Contains(y.Key))
+            {
+                return 1;
+            }
+
+            return x.Key.CompareTo(y.Key);
+        }
+    }
+
     public class StatisticsViewModel : BindableBase
     {
         IRepository<BankOperation> _bankOperationRepository;
@@ -93,7 +127,9 @@ namespace MyBudget.UI.Operations
 
             var roots = GetGroup(operations.GroupBy(l1 => l1.Category ?? string.Empty));
 
-            foreach (var item in roots.Where(a => !string.IsNullOrEmpty(a.Key)).OfType<StatisticsGroup>().OrderBy(x=>x.Sum))
+            var sorted = roots.Where(a => !string.IsNullOrEmpty(a.Key)).OfType<StatisticsGroup>();
+
+            foreach (var item in sorted)
             {
                 var subGroupping = item.Elements.GroupBy(a => a.SubCategory ?? string.Empty)
                     .Where(a => !string.IsNullOrEmpty(a.Key));
@@ -202,7 +238,7 @@ namespace MyBudget.UI.Operations
                         Key = group.Key,
                         Elements = group,
                         Sum = group.Sum(el1 => el1.Amount)
-                    }).OrderBy(x => x.Sum));
+                    }).OrderBy(x => x, new StatisticsGroupSorter()));
         }
 
         private IEnumerable<IGroupItem> _items { get; set; }

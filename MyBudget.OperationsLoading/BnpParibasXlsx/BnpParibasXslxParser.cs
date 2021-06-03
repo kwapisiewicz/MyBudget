@@ -44,6 +44,28 @@ namespace MyBudget.OperationsLoading.BnpParibasXlsx
             return stream;
         }
 
+        public Dictionary<string, int> version1 = new Dictionary<string, int>()
+        {
+            { "OrderDate",1 },
+            { "ExecutionDate",2 },
+            {"Amount",3 },
+            {"Description",6 },
+            {"Type",8 },
+            {"BankAccountProduct",7 },
+            {"CounterpartyInfo",5 }
+        };
+
+        public Dictionary<string, int> version2 = new Dictionary<string, int>()
+        {
+            { "OrderDate",1 },
+            { "ExecutionDate",2 },
+            {"Amount",4 },
+            {"Description",7 },
+            {"Type",9 },
+            {"BankAccountProduct",8 },
+            {"CounterpartyInfo",6 }
+        };
+
         public IEnumerable<BankOperation> Parse(Stream stream)
         {
             List<BankOperation> ops = new List<BankOperation>();
@@ -58,20 +80,20 @@ namespace MyBudget.OperationsLoading.BnpParibasXlsx
                 {
                     var bankOperation = new BankOperation();
                     bankOperation.LpOnStatement = rowNum;
-                    bankOperation.OrderDate = GetDateFromExcelRange(myWorksheet.Cells[rowNum, 1]);
-                    bankOperation.ExecutionDate = GetDateFromExcelRange(myWorksheet.Cells[rowNum, 2]);
-                    bankOperation.Amount = Convert.ToDecimal(myWorksheet.Cells[rowNum, 3].Value);
-                    bankOperation.Description = myWorksheet.Cells[rowNum, 6].Value.ToString();
-                    bankOperation.Type = _repositoryHelper.GetOrAddOperationType(myWorksheet.Cells[rowNum, 8].Value.ToString());
+                    bankOperation.OrderDate = GetDateFromExcelRange(myWorksheet.Cells[rowNum, version2["OrderDate"]]);
+                    bankOperation.ExecutionDate = GetDateFromExcelRange(myWorksheet.Cells[rowNum, version2["ExecutionDate"]]);
+                    bankOperation.Amount = Convert.ToDecimal(myWorksheet.Cells[rowNum, version2["Amount"]].Value);
+                    bankOperation.Description = myWorksheet.Cells[rowNum, version2["Description"]].Value.ToString();
+                    bankOperation.Type = _repositoryHelper.GetOrAddOperationType(myWorksheet.Cells[rowNum, version2["Type"]].Value.ToString());
                     bankOperation.Cleared = true;
 
-                    var bankAccountProduct = myWorksheet.Cells[rowNum, 7].Value.ToString();                    
+                    var bankAccountProduct = myWorksheet.Cells[rowNum, version2["BankAccountProduct"]].Value.ToString();                    
                     var accountNumber = bankAccountProduct.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[1];
                     bankOperation.BankAccount = _repositoryHelper.GetOrAddAccount(accountNumber);
 
                     //Parsing title and other details for different transactions
-                    var counterpartyInfo = myWorksheet.Cells[rowNum, 5].Value.ToString();
-                    _operationHandler.Handle(bankOperation, bankOperation.Description, myWorksheet.Cells[rowNum, 5].Value.ToString());
+                    var counterpartyInfo = myWorksheet.Cells[rowNum, version2["CounterpartyInfo"]].Value.ToString();
+                    _operationHandler.Handle(bankOperation, bankOperation.Description, counterpartyInfo);
 
                     ops.Add(bankOperation);
                 }
